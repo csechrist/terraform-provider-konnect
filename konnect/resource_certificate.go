@@ -52,6 +52,7 @@ func resourceCertificate() *schema.Resource {
 }
 
 func fillCertificate(c *client.Certificate, d *schema.ResourceData) {
+	c.ControlPlaneId = d.Get("control_plane_id").(string)
 	c.Certificate = d.Get("certificate").(string)
 	c.Key = d.Get("key").(string)
 	alternateKey, ok := d.GetOk("alternate_key")
@@ -65,6 +66,7 @@ func fillCertificate(c *client.Certificate, d *schema.ResourceData) {
 }
 
 func fillResourceDataFromCertificate(c *client.Certificate, d *schema.ResourceData) {
+	d.Set("control_plane_id", c.ControlPlaneId)
 	d.Set("certificate", c.Certificate)
 	d.Set("key", c.Key)
 	d.Set("alternate_key", c.AlternateKey)
@@ -97,7 +99,8 @@ func resourceCertificateCreate(ctx context.Context, d *schema.ResourceData, m in
 		d.SetId("")
 		return diag.FromErr(err)
 	}
-	d.SetId(retVal.Id)
+	retVal.ControlPlaneId = newDataPlaneCert.ControlPlaneId
+	d.SetId(retVal.CertificateEncodeId())
 	fillResourceDataFromCertificate(retVal, d)
 	d.Set("control_plane_id", d.Get("control_plane_id").(string))
 	return diags
@@ -105,8 +108,9 @@ func resourceCertificateCreate(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceCertificateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	controlPlaneId, id := client.CertificateDecodeId(d.Id())
 	c := m.(*client.Client)
-	requestPath := fmt.Sprintf(client.CertificatePathGet, d.Get("control_plane_id").(string), d.Id())
+	requestPath := fmt.Sprintf(client.CertificatePathGet, controlPlaneId, id)
 	body, err := c.HttpRequest(ctx, true, http.MethodGet, requestPath, nil, nil, &bytes.Buffer{})
 	if err != nil {
 		d.SetId("")
@@ -124,8 +128,10 @@ func resourceCertificateRead(ctx context.Context, d *schema.ResourceData, m inte
 
 func resourceCertificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	controlPlaneId, id := client.CertificateDecodeId(d.Id())
+
 	c := m.(*client.Client)
-	requestPath := fmt.Sprintf(client.CertificatePathGet, d.Get("control_plane_id").(string), d.Id())
+	requestPath := fmt.Sprintf(client.CertificatePathGet, controlPlaneId, id)
 	_, err := c.HttpRequest(ctx, true, http.MethodDelete, requestPath, nil, nil, &bytes.Buffer{})
 	if err != nil {
 		return diag.FromErr(err)
@@ -135,6 +141,8 @@ func resourceCertificateDelete(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceCertificateUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	controlPlaneId, id := client.CertificateDecodeId(d.Id())
+
 	c := m.(*client.Client)
 	buf := bytes.Buffer{}
 	upCertificate := client.Certificate{}
@@ -143,11 +151,11 @@ func resourceCertificateUpdate(ctx context.Context, d *schema.ResourceData, m in
 	if err != nil {
 		return diag.FromErr(err)
 	}
-	requestPath := fmt.Sprintf(client.CertificatePathGet, d.Get("control_plane_id").(string), d.Id())
+	requestPath := fmt.Sprintf(client.CertificatePathGet, controlPlaneId, id)
 	requestHeaders := http.Header{
 		headers.ContentType: []string{client.ApplicationJson},
 	}
-	body, err := c.HttpRequest(ctx, true, http.MethodPatch, requestPath, nil, requestHeaders, &buf)
+	body, err := c.HttpRequest(ctx, true, http.MethodPut, requestPath, nil, requestHeaders, &buf)
 	if err != nil {
 		return diag.FromErr(err)
 	}

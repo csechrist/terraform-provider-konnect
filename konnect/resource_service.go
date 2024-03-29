@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/csechrist/terraform-provider-konnect/konnect/client"
 	"github.com/go-http-utils/headers"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"net/http"
 )
 
 func resourceService() *schema.Resource {
@@ -84,6 +85,13 @@ func resourceService() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"ca_certificates": {
+				Type: schema.TypeSet,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+				Optional: true,
+			},
 		},
 	}
 }
@@ -124,6 +132,13 @@ func fillService(c *client.Service, d *schema.ResourceData) {
 	if ok {
 		c.WriteTimeout = writeTimeout.(int)
 	}
+	caCertificates, ok := d.GetOk("ca_certificates")
+	if ok {
+		c.CaCertificates = make([]string, 0)
+		for _, v := range caCertificates.(*schema.Set).List() {
+			c.CaCertificates = append(c.CaCertificates, v.(string))
+		}
+	}
 }
 
 func fillResourceDataFromService(c *client.Service, d *schema.ResourceData) {
@@ -139,6 +154,7 @@ func fillResourceDataFromService(c *client.Service, d *schema.ResourceData) {
 	d.Set("write_timeout", c.WriteTimeout)
 	d.Set("enabled", c.Enabled)
 	d.Set("service_id", c.Id)
+	d.Set("ca_certificates", c.CaCertificates)
 }
 
 func resourceServiceCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {

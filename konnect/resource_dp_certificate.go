@@ -43,16 +43,13 @@ func resourceDPCertificate() *schema.Resource {
 
 func fillDPCertificate(c *client.DataPlaneCertificate, d *schema.ResourceData) {
 	c.Cert = d.Get("cert").(string)
-}
-
-func flattenDPCertificate(d *schema.ResourceData, c *client.DataPlaneCertificate) {
-	d.Set("id", c.Id)
-	d.Set("cert", c.Cert)
+	c.ControlPlaneId = d.Get("control_plane_id").(string)
 }
 
 func fillResourceDataFromDPCertificate(c *client.DataPlaneCertificate, d *schema.ResourceData) {
 	d.Set("id", c.Id)
 	d.Set("cert", c.Cert)
+	d.Set("control_plane_id", c.ControlPlaneId)
 }
 
 func resourceDPCertificateCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
@@ -81,17 +78,19 @@ func resourceDPCertificateCreate(ctx context.Context, d *schema.ResourceData, m 
 		d.SetId("")
 		return diag.FromErr(err)
 	}
-	d.SetId(retVal.Id)
+	retVal.ControlPlaneId = newDataPlaneCert.ControlPlaneId
+	d.SetId(retVal.DataPlaneCertificateEncodeId())
 	fillResourceDataFromDPCertificate(retVal, d)
-	d.Set("control_plane_id", d.Get("control_plane_id").(string))
 	return diags
 
 }
 
 func resourceDPCertificateRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	controlPlaneId, id := client.DataPlaneCertificateDecodeId(d.Id())
+
 	c := m.(*client.Client)
-	requestPath := fmt.Sprintf(client.DataPlanePathGet, d.Get("control_plane_id").(string), d.Id())
+	requestPath := fmt.Sprintf(client.DataPlanePathGet, controlPlaneId, id)
 	body, err := c.HttpRequest(ctx, true, http.MethodGet, requestPath, nil, nil, &bytes.Buffer{})
 	if err != nil {
 		d.SetId("")
@@ -113,8 +112,10 @@ func resourceDPCertificateRead(ctx context.Context, d *schema.ResourceData, m in
 
 func resourceDPCertificateDelete(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
+	controlPlaneId, id := client.CertificateDecodeId(d.Id())
+
 	c := m.(*client.Client)
-	requestPath := fmt.Sprintf(client.DataPlanePathGet, d.Get("control_plane_id"), d.Id())
+	requestPath := fmt.Sprintf(client.DataPlanePathGet, controlPlaneId, id)
 	_, err := c.HttpRequest(ctx, true, http.MethodDelete, requestPath, nil, nil, &bytes.Buffer{})
 	if err != nil {
 		return diag.FromErr(err)
