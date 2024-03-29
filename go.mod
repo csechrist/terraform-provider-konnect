@@ -1,4 +1,4 @@
-module github.com/scastria/terraform-provider-konnect
+module github.com/csechrist/terraform-provider-konnect
 
 go 1.19
 

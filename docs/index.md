@@ -9,7 +9,7 @@ that you would like to be added, please submit an Issue in corresponding GitHub 
 terraform {
   required_providers {
     konnect = {
-      source  = "scastria/konnect"
+      source  = "csechrist/konnect"
       version = "~> 0.1.0"
     }
   }

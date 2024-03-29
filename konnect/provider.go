@@ -2,10 +2,11 @@ package konnect
 
 import (
 	"context"
+
+	"github.com/csechrist/terraform-provider-konnect/konnect/client"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
-	"github.com/scastria/terraform-provider-konnect/konnect/client"
 )
 
 func Provider() *schema.Provider {
@@ -49,6 +50,8 @@ func Provider() *schema.Provider {
 			"konnect_consumer_hmac":           resourceConsumerHMAC(),
 			"konnect_consumer_jwt":            resourceConsumerJWT(),
 			"konnect_plugin":                  resourcePlugin(),
+			"konnect_dp_certificate":          resourceDPCertificate(),
+			"konnect_certificate":             resourceCertificate(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"konnect_control_plane": dataSourceControlPlane(),

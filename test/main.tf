@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     konnect = {
-      source = "github.com/scastria/konnect"
+      source = "github.com/csechrist/konnect"
     }
   }
 }
