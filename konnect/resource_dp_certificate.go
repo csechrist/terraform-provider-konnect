@@ -32,10 +32,12 @@ func resourceDPCertificate() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringLenBetween(2, math.MaxInt),
+				ForceNew:     true,
 			},
 			"control_plane_id": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 		},
 	}
